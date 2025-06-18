@@ -67,25 +67,23 @@ export default function RegisterForm({ onRegistrationSuccess }) {
   }
 
   return (
-    <div className="space-x-2">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        register();
+      }}
+      className="flex gap-2"
+    >
       <input
-        className="border px-2 py-1"
+        className="flex-1 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm
+                   focus:border-rose-500 focus:ring-rose-500"
         value={nick}
         onChange={(e) => setNick(e.target.value)}
         placeholder="nickname"
       />
-      <button 
-        onClick={register} 
-        className="bg-blue-600 text-white px-3 py-1"
-        disabled={!account}
-      >
-        {account ? "Register" : "Connect Wallet"}
+      <button type="submit" className="btn">
+        Register
       </button>
-      {account && (
-        <p className="text-xs text-gray-500 mt-1">
-          Address: {getAccountAddress(account)}
-        </p>
-      )}
-    </div>
+    </form>
   );
 }

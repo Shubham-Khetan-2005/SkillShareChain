@@ -1,1 +1,25 @@
 @import "tailwindcss";
+/* ----------  CUSTOM THEME  ---------- */
+@layer base {
+  :root {
+    --brand: 59 130 246;   /* blue-500 (r g b) */
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md px-4 py-2
+           text-white bg-blue-500 hover:bg-blue-600 transition;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 rounded-md px-4 py-2
+           border border-blue-500 text-blue-500 hover:bg-blue-50 transition;
+  }
+  .card {
+    @apply rounded-xl bg-white/90 shadow-md ring-1 ring-black/5 p-5;
+  }
+  .chip {
+    @apply inline-block bg-blue-50 text-blue-600
+           px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+}

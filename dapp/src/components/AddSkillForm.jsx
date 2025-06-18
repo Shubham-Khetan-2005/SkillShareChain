@@ -30,20 +30,23 @@ export default function AddSkillForm({ onSkillAdded }) {
   }
 
   return (
-    <div className="space-x-2 mt-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        addSkill();
+      }}
+      className="flex gap-2"
+    >
       <input
-        className="border px-2 py-1"
+        className="flex-1 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm
+                   focus:border-rose-500 focus:ring-rose-500"
         value={skill}
         onChange={(e) => setSkill(e.target.value)}
         placeholder="new skill"
       />
-      <button
-        onClick={addSkill}
-        className="bg-green-600 text-white px-3 py-1"
-        disabled={!account}
-      >
+      <button type="submit" className="btn-outline">
         Add Skill
       </button>
-    </div>
+    </form>
   );
 }

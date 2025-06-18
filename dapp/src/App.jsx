@@ -6,25 +6,36 @@ import AddSkillForm from "./components/AddSkillForm";
 import Profile from "./components/Profile";
 
 export default function App() {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const handleRegistrationSuccess = () => {
-    setRefreshTrigger(prev => prev + 1); // Trigger profile refresh
-  };
-
-  const handleSkillAdded = () => {
-    setRefreshTrigger(prev => prev + 1); // Trigger profile refresh
-  };
+  const [refresh, setRefresh] = useState(0);
+  const bump = () => setRefresh((v) => v + 1);
 
   return (
     <WalletProvider>
-      <div className="max-w-md mx-auto p-6 space-y-4">
-        <h1 className="text-2xl font-bold">SkillShareChain MVP</h1>
-        <ConnectButton />
-        <RegisterForm onRegistrationSuccess={handleRegistrationSuccess} />
-        <AddSkillForm onSkillAdded={handleSkillAdded} />
-        <Profile refreshTrigger={refreshTrigger} />
-      </div>
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-12">
+        <div className="mx-auto w-full max-w-lg px-4 space-y-6">
+          {/* header */}
+          <header className="text-center">
+            <h1 className="text-3xl font-extrabold text-blue-600">
+              SkillShareChain
+            </h1>
+            <p className="text-sm text-gray-600">
+              Trade knowledge, not just tokens.
+            </p>
+          </header>
+
+          {/* wallet & forms in one card */}
+          <section className="card space-y-4">
+            <ConnectButton />
+            <RegisterForm onRegistrationSuccess={bump} />
+            <AddSkillForm onSkillAdded={bump} />
+          </section>
+
+          {/* profile appears below the options */}
+          <section className="card">
+            <Profile refreshTrigger={refresh} />
+          </section>
+        </div>
+      </main>
     </WalletProvider>
   );
 }

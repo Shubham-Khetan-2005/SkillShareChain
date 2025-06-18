@@ -58,23 +58,19 @@ export default function Profile({ refreshTrigger }) {
   if (!data) return <p>No profile found. Register above.</p>;
 
   return (
-    <div className="mt-4">
-      <p className="font-semibold">Hello, {data.name}!</p>
-      <div className="mt-2">
-        <p className="text-sm font-medium">Skills:</p>
-        {data.skills.length === 0 ? (
-          <p className="text-gray-500 text-sm">No skills added yet</p>
-        ) : (
-          <ul className="list-disc ml-5">
-            {data.skills.map((skill, i) => (
-              <li key={i} className="text-sm">{skill}</li>
-            ))}
-          </ul>
-        )}
+  <>
+    <h2 className="text-lg font-bold mb-3">{data.name}</h2>
+
+    <p className="text-sm text-gray-600 mb-1">Skills</p>
+    {data.skills.length === 0 ? (
+      <p className="text-gray-400 text-sm">No skills yet.</p>
+    ) : (
+      <div className="flex flex-wrap gap-2">
+        {data.skills.map((s, i) => (
+          <span key={i} className="chip">{s}</span>
+        ))}
       </div>
-      <p className="text-xs text-gray-400 mt-2">
-        Address: {getAccountAddress(account)}
-      </p>
-    </div>
-  );
+    )}
+  </>
+);
 }
