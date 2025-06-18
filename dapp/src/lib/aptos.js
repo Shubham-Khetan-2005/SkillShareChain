@@ -1,0 +1,52 @@
+import { AptosClient } from "aptos";
+
+export const client = new AptosClient(
+  "https://fullnode.devnet.aptoslabs.com/v1"
+);
+
+export const MODULE_ADDR  = import.meta.env.VITE_MODULE_ADDR;
+export const REGISTER_FN  = `${MODULE_ADDR}::skillshare::register_user`;
+export const ADD_SKILL_FN = `${MODULE_ADDR}::skillshare::add_skill`;
+export const USER_STRUCT  = `${MODULE_ADDR}::skillshare::User`;
+
+export const encode = (str) =>
+  Array.from(new TextEncoder().encode(str));
+
+export const decode = (value) => {
+  if (typeof value === "string" && value.startsWith("0x")) {
+    const bytes = [];
+    for (let i = 2; i < value.length; i += 2) {
+      bytes.push(parseInt(value.slice(i, i + 2), 16));
+    }
+    return new TextDecoder().decode(new Uint8Array(bytes));
+  }
+  if (Array.isArray(value)) {
+    return new TextDecoder().decode(new Uint8Array(value));
+  }
+  return value;
+};
+
+export const buildPayload = (entryFn, args = []) => ({
+  data: {
+    function: entryFn,
+    type_arguments: [],
+    functionArguments: args,
+  },
+});
+
+// Simple, direct address conversion
+export const getAccountAddress = (account) => {
+  if (!account || !account.address) return null;
+  
+  // Try toString() first (for AccountAddress objects)
+  if (typeof account.address.toString === "function") {
+    return account.address.toString();
+  }
+  
+  // If it's already a string
+  if (typeof account.address === "string") {
+    return account.address;
+  }
+  
+  return null;
+};
