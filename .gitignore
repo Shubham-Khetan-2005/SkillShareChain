@@ -1,2 +1,3 @@
 .aptos/
 smart_contract/build/
+.env
