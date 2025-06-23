@@ -13,7 +13,8 @@ module skillshare_addr::skillshare {
         move_to(acct, User { name, skills: vector::empty<vector<u8>>() });
     }
 
-    /// Boolean view used by the front-end duplicate guard
+    // Boolean view used by the front-end duplicate guard
+    #[view]
     public fun user_exists(addr: address): bool {
         exists<User>(addr)
     }
