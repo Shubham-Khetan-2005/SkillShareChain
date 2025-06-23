@@ -50,3 +50,26 @@ export const getAccountAddress = (account) => {
   
   return null;
 };
+
+/* ----------  view helpers ---------- */
+
+/** true if any User resource exists at addr */
+export const userExists = async (addr) => {
+  const [flag] = await client.view({
+    function: `${MODULE_ADDR}::skillshare::user_exists`,
+    type_arguments: [],
+    arguments: [addr],
+  });
+  return flag;                        // boolean
+};
+
+/** { name:string, skills:string[] }  or null */
+export const fetchProfile = async (addr) => {
+  if (!(await userExists(addr))) return null;
+
+  const resource = await client.getAccountResource(addr, USER_STRUCT);
+  return {
+    name:   decode(resource.data.name),
+    skills: resource.data.skills.map(decode),
+  };
+};

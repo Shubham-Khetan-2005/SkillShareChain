@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import { client, USER_STRUCT, decode, getAccountAddress } from "../lib/aptos";
+import { fetchProfile, getAccountAddress } from "../lib/aptos";
 
 export default function Profile({ refreshTrigger }) {
   const { account } = useWallet();
@@ -26,16 +26,18 @@ export default function Profile({ refreshTrigger }) {
     setError(null);
     
     try {
-      const res = await client.getAccountResource(address, USER_STRUCT);
-      console.log("Raw profile data:", res);
+      // const res = await client.getAccountResource(address, USER_STRUCT);
+      // console.log("Raw profile data:", res);
       
-      const profileData = {
-        name: decode(res.data.name),
-        skills: res.data.skills.map(decode),
-      };
+      // const profileData = {
+      //   name: decode(res.data.name),
+      //   skills: res.data.skills.map(decode),
+      // };
       
-      console.log("Decoded profile data:", profileData);
-      setData(profileData);
+      // console.log("Decoded profile data:", profileData);
+      // setData(profileData);
+
+      setData(await fetchProfile(address));
     } catch (e) {
       console.log("Profile load error:", e.status, e.message);
       if (e.status === 404) {

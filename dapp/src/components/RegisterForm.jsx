@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import {
-  client,
-  USER_STRUCT,
+  userExists,
   REGISTER_FN,
   encode,
   buildPayload,
@@ -12,6 +11,7 @@ import {
 export default function RegisterForm({ onRegistrationSuccess }) {
   const { account, signAndSubmitTransaction } = useWallet();
   const [nick, setNick] = useState("");
+  const [busy, setBusy]   = useState(false);
 
   async function register() {
     if (!account) {
@@ -30,59 +30,92 @@ export default function RegisterForm({ onRegistrationSuccess }) {
       return;
     }
 
-    console.log("Checking profile for address:", address);
+  //   console.log("Checking profile for address:", address);
     
-    // Check if profile exists
+  //   // Check if profile exists
+  //   try {
+  //     const resource = await client.getAccountResource(address, USER_STRUCT);
+  //     console.log("Profile already exists:", resource);
+  //     alert("Profile already exists on this wallet.");
+  //     return;
+  //   } catch (e) {
+  //     console.log("Profile check result:", e.status, e.message);
+  //     // If 404, user doesn't exist - proceed with registration
+  //     if (e.status !== 404) {
+  //       alert("Error checking profile: " + e.message);
+  //       return;
+  //     }
+  //   }
+
+  //   // Submit registration transaction
+  //   try {
+  //     console.log("Submitting registration for:", address);
+  //     const result = await signAndSubmitTransaction(
+  //       buildPayload(REGISTER_FN, [encode(nick.trim())])
+  //     );
+  //     console.log("Registration result:", result);
+  //     setNick("");
+  //     alert("Registration successful!");
+      
+  //     if (onRegistrationSuccess) {
+  //       onRegistrationSuccess();
+  //     }
+  //   } catch (e) {
+  //     console.error("Registration error:", e);
+  //     alert("Registration failed: " + (e?.message || "Unknown error"));
+  //   }
+  // }
+
+  setBusy(true);
     try {
-      const resource = await client.getAccountResource(address, USER_STRUCT);
-      console.log("Profile already exists:", resource);
-      alert("Profile already exists on this wallet.");
-      return;
-    } catch (e) {
-      console.log("Profile check result:", e.status, e.message);
-      // If 404, user doesn't exist - proceed with registration
-      if (e.status !== 404) {
-        alert("Error checking profile: " + e.message);
+      /* 1 ─ duplicate-profile guard (cheap view call) */
+      if (await userExists(address)) {
+        alert("Profile already exists on this wallet.");
         return;
       }
-    }
 
-    // Submit registration transaction
-    try {
-      console.log("Submitting registration for:", address);
-      const result = await signAndSubmitTransaction(
+      /* 2 ─ submit on-chain tx */
+      await signAndSubmitTransaction(
         buildPayload(REGISTER_FN, [encode(nick.trim())])
       );
-      console.log("Registration result:", result);
+
       setNick("");
       alert("Registration successful!");
-      
-      if (onRegistrationSuccess) {
-        onRegistrationSuccess();
-      }
+      onRegistrationSuccess?.();
     } catch (e) {
-      console.error("Registration error:", e);
-      alert("Registration failed: " + (e?.message || "Unknown error"));
+      console.error(e);
+      if (String(e).includes("rejected")) {
+        alert("Transaction cancelled");
+      } else {
+        alert("Registration failed: " + (e?.message || "unknown error"));
+      }
+    } finally {
+      setBusy(false);
     }
-  }
+  };
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        register();
+        if (!busy) register();
       }}
       className="flex gap-2"
     >
       <input
         className="flex-1 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm
-                   focus:border-rose-500 focus:ring-rose-500"
+                   focus:border-blue-500 focus:ring-blue-500"
         value={nick}
         onChange={(e) => setNick(e.target.value)}
         placeholder="nickname"
+        disabled={busy}
       />
-      <button type="submit" className="btn">
-        Register
+      <button
+        type="submit"
+        className="btn disabled:opacity-50"
+        disabled={busy || !account}
+      >
+        {busy ? "Registering…" : "Register"}
       </button>
     </form>
   );
