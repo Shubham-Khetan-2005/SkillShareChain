@@ -4,9 +4,12 @@ import ConnectButton from "./components/ConnectButton";
 import RegisterForm from "./components/RegisterForm";
 import AddSkillForm from "./components/AddSkillForm";
 import Profile from "./components/Profile";
+import BrowseTeachers from "./components/BrowseTeachers";
+import TeacherDashboard from "./components/TeacherDashboard";
 
 export default function App() {
   const [refresh, setRefresh] = useState(0);
+  const [page, setPage] = useState("home");
   const bump = () => setRefresh((v) => v + 1);
 
   return (
@@ -23,17 +26,48 @@ export default function App() {
             </p>
           </header>
 
-          {/* wallet & forms in one card */}
-          <section className="card space-y-4">
-            <ConnectButton />
-            <RegisterForm onRegistrationSuccess={bump} />
-            <AddSkillForm onSkillAdded={bump} />
-          </section>
+          {/* NAVIGATION */}
+          <nav className="flex gap-2 justify-center mb-2">
+            <button
+              className={`btn-outline ${page === "home" ? "bg-blue-100" : ""}`}
+              onClick={() => setPage("home")}
+            >
+              My Profile
+            </button>
+            <button
+              className={`btn-outline ${page === "browse" ? "bg-blue-100" : ""}`}
+              onClick={() => setPage("browse")}
+            >
+              Browse Teachers
+            </button>
+            <button
+              className={`btn-outline ${page === "dashboard" ? "bg-blue-100" : ""}`}
+              onClick={() => setPage("dashboard")}
+            >
+              Teacher DashBoard
+            </button>
+          </nav>
 
-          {/* profile appears below the options */}
-          <section className="card">
-            <Profile refreshTrigger={refresh} />
-          </section>
+          {/* Page Content */}
+          {page === "home" && (
+            <>
+              {/* wallet & forms in one card */}
+              <section className="card space-y-4">
+                <ConnectButton />
+                <RegisterForm onRegistrationSuccess={bump} />
+                <AddSkillForm onSkillAdded={bump} />
+              </section>
+
+              {/* profile appears below the options */}
+              <section className="card">
+                <Profile refreshTrigger={refresh} />
+              </section>
+            </>
+          )}
+
+          {page === "browse" && <BrowseTeachers/>}
+          {page === "dashbooard" && <TeacherDashboard/>}
+          
         </div>
       </main>
     </WalletProvider>
