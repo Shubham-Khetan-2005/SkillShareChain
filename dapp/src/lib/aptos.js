@@ -8,6 +8,8 @@ export const MODULE_ADDR  = import.meta.env.VITE_MODULE_ADDR;
 export const REGISTER_FN  = `${MODULE_ADDR}::skillshare::register_user`;
 export const ADD_SKILL_FN = `${MODULE_ADDR}::skillshare::add_skill`;
 export const USER_STRUCT  = `${MODULE_ADDR}::skillshare::User`;
+export const REQUEST_FN = `${MODULE_ADDR}::skillshare::request_teach`;
+export const ACCEPT_FN  = `${MODULE_ADDR}::skillshare::accept_request`;
 
 export const encode = (str) =>
   Array.from(new TextEncoder().encode(str));
@@ -73,3 +75,30 @@ export const fetchProfile = async (addr) => {
     skills: resource.data.skills.map(decode),
   };
 };
+
+// Send a teach request (learner → teacher)
+export async function sendTeachRequest({ teacher, skill, signAndSubmitTransaction }) {
+  const payload = buildPayload(REQUEST_FN, [teacher, encode(skill)]);
+  return await signAndSubmitTransaction(payload);
+}
+
+// Accept a teach request (teacher)
+export async function acceptTeachRequest({ requestId, signAndSubmitTransaction }) {
+  const payload = buildPayload(ACCEPT_FN, [requestId]);
+  return await signAndSubmitTransaction(payload);
+}
+
+// TODO: Replace this with real data or indexer in the future
+export async function fetchAllTeachers() {
+  // Example: return [{ address, name, skills }]
+  // For now, return an empty array or mock data
+  return [];
+}
+
+export async function fetchTeacherRequests(teacherAddr) {
+  // TODO: Implement: fetch events or table data from chain
+  // For now, return an empty array or mock data
+  return [];
+}
+
+
