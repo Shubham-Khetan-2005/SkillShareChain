@@ -1,18 +1,18 @@
 module skillshare_addr::skillshare {
     use std::signer;
     use std::vector;
-    // use std::string;
     use aptos_std::table::{Self, Table};
-    use aptos_std::event::{Self, EventHandle};
+    use aptos_framework::event;
     use aptos_framework::account;
 
-    // User Struct
+
+    /// On-chain profile for each user
     struct User has key {
         name: vector<u8>,
         skills: vector<vector<u8>>,
     }
 
-    // TeachRequest struct
+    /// A request from a learner to a teacher for a lesson
     struct TeachRequest has store {
         id: u64,
         learner: address,
@@ -21,15 +21,15 @@ module skillshare_addr::skillshare {
         accepted: bool,
     }
 
-    // Global request storage
+    /// Global storage for all teach requests and events
     struct GlobalRequests has key {
         next_id: u64,
         requests: Table<u64, TeachRequest>,
-        request_events: EventHandle<TeachRequestedEvent>,
-        accept_events: EventHandle<TeachAcceptedEvent>,
+        request_events: event::EventHandle<TeachRequestedEvent>,
+        accept_events: event::EventHandle<TeachAcceptedEvent>,
     }
 
-    // Events
+    /// Event emitted when a teach request is created
     struct TeachRequestedEvent has drop, store {
         id: u64,
         learner: address,
@@ -37,32 +37,50 @@ module skillshare_addr::skillshare {
         skill: vector<u8>,
     }
 
+    /// Event emitted when a teach request is accepted
     struct TeachAcceptedEvent has drop, store {
         id: u64,
     }
-    /// error code 1 = user already exists
-    public entry fun register_user(acct: &signer, name: vector<u8>) {
-        assert!(!exists<User>(signer::address_of(acct)), 1);
-        move_to(acct, User { name, skills: vector::empty<vector<u8>>() });
+
+    /// Event emitted when a user registers
+    struct UserRegisteredEvent has drop, store {
+        addr: address,
+        name: vector<u8>,
     }
 
-    // Boolean view used by the front-end duplicate guard
+    /// Event handle for all registration events
+    struct RegistrationEvents has key {
+        handle: event::EventHandle<UserRegisteredEvent>,
+    }
+
+    /// Register a new user and emit a registration event
+    /// error code 1: user already exists
+    public entry fun register_user(acct: &signer, name: vector<u8>) acquires RegistrationEvents {
+        assert!(!exists<User>(signer::address_of(acct)), 1);
+        move_to(acct, User { name: copy name, skills: vector::empty<vector<u8>>() });
+
+        let events = borrow_global_mut<RegistrationEvents>(@skillshare_addr);
+        event::emit_event<UserRegisteredEvent>(&mut events.handle, UserRegisteredEvent {
+            addr: signer::address_of(acct),
+            name,
+        });
+    }
+
+    /// Boolean view used by the front-end duplicate guard
     #[view]
     public fun user_exists(addr: address): bool {
         exists<User>(addr)
     }
 
-    /// error code 2 = user not found
+    /// Add a skill to the caller's profile
+    /// error code 2: user not found
     public entry fun add_skill(acct: &signer, skill: vector<u8>) acquires User {
         assert!(exists<User>(signer::address_of(acct)), 2);
         let user_ref = borrow_global_mut<User>(signer::address_of(acct));
         vector::push_back(&mut user_ref.skills, skill);
     }
 
-
-    // Teach Functions
-
-    // Initialise global storage
+    /// Initialize global storage for teach requests and events (call once by admin)
     public entry fun init_global_requests(admin: &signer) {
         let addr = signer::address_of(admin);
         if (!exists<GlobalRequests>(addr)) {
@@ -75,7 +93,17 @@ module skillshare_addr::skillshare {
         }
     }
 
-    // Request to learn a skill
+    /// Initialize registration event handle (call once by admin)
+    public entry fun init_registration_events(admin: &signer) {
+        if (!exists<RegistrationEvents>(@skillshare_addr)) {
+            move_to(admin, RegistrationEvents {
+                handle: account::new_event_handle<UserRegisteredEvent>(admin),
+            });
+        }
+    }
+
+    /// Learner requests a lesson from a teacher for a specific skill
+    /// error code 3: teacher not registered
     public entry fun request_teach(
         learner: &signer,
         teacher: address,
@@ -84,25 +112,25 @@ module skillshare_addr::skillshare {
         let learner_addr = signer::address_of(learner);
 
         // Validate teacher exists
-        assert!(user_exists(teacher), 3); // Error 3: Teacher got registered
+        assert!(user_exists(teacher), 3);
 
         // Get global storage
         let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
         let id = global.next_id;
 
         // Create and store request
-        let request=TeachRequest {
+        let request = TeachRequest {
             id,
             learner: learner_addr,
             teacher,
             skill: copy skill,
-            accepted: false
+            accepted: false,
         };
         table::add(&mut global.requests, id, request);
-        global.next_id=id+1;
+        global.next_id = id + 1;
 
-        //Emit event
-        event::emit_event(&mut global.request_events, TeachRequestedEvent {
+        // Emit event
+        event::emit_event<TeachRequestedEvent>(&mut global.request_events, TeachRequestedEvent {
             id,
             learner: learner_addr,
             teacher,
@@ -110,26 +138,28 @@ module skillshare_addr::skillshare {
         });
     }
 
-    // Teacher accepts request
+    /// Teacher accepts a teach request by ID
+    /// error code 4: request not found
+    /// error code 5: not your request
     public entry fun accept_request(
         teacher: &signer,
         id: u64
     ) acquires GlobalRequests {
-        let teacher_addr = signer::address_of(teacher); 
-        let global=borrow_global_mut<GlobalRequests>(@skillshare_addr);
+        let teacher_addr = signer::address_of(teacher);
+        let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
 
-        // validate request exists
-        assert!(table::contains(&global.requests, id), 4); //Error4:Request not found
-        let request=table::borrow_mut(&mut global.requests, id);
+        // Validate request exists
+        assert!(table::contains(&global.requests, id), 4);
+        let request = table::borrow_mut(&mut global.requests, id);
 
-        //validate teacher is correct
-        assert!(request.teacher==teacher_addr, 5); //Error5: Not your request
+        // Validate teacher is correct
+        assert!(request.teacher == teacher_addr, 5);
 
-        //update status
-        request.accepted=true;
+        // Update status
+        request.accepted = true;
 
-        //emit event
-        event::emit_event(&mut global.accept_events, TeachAcceptedEvent {
+        // Emit event
+        event::emit_event<TeachAcceptedEvent>(&mut global.accept_events, TeachAcceptedEvent {
             id,
         });
     }

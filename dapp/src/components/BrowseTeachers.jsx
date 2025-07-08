@@ -1,28 +1,34 @@
-import { use, useEffect, useState } from "react";
-import {useWallet} from "@aptos-labs/wallet-adapter-react";
+import { useEffect, useState } from "react";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { fetchAllTeachers, sendTeachRequest, getAccountAddress } from "../lib/aptos";
-
 
 export default function BrowseTeachers() {
     const [teachers, setTeachers] = useState([]);
     const [loading, setLoading] = useState(false);
-    const {account, signAndSubmitTransaction} = useWallet();
+    const { account, signAndSubmitTransaction } = useWallet();
     const [requesting, setRequesting] = useState(null);
+    const [selectedSkills, setSelectedSkills] = useState({}); // teacherAddr -> skill
 
     useEffect(() => {
         setLoading(true);
         fetchAllTeachers().then((users) => {
-            // don't show your own profile in the list
             const myAddr = account ? getAccountAddress(account) : null;
             setTeachers(users.filter(u => u.address !== myAddr));
             setLoading(false);
         });
     }, [account]);
 
+    function handleSkillChange(teacherAddr, skill) {
+        setSelectedSkills((prev) => ({
+            ...prev,
+            [teacherAddr]: skill,
+        }));
+    }
+
     async function handlerequest(teacher) {
         if (!account) return alert("Connect wallet first");
         if (!teacher.skills.length) return alert("Teacher has no skills listed.");
-        const skill = teacher.skills[0]; // for MVP, pick the first skill
+        const skill = selectedSkills[teacher.address] || teacher.skills[0];
         setRequesting(teacher.address);
         try {
             await sendTeachRequest({
@@ -31,14 +37,14 @@ export default function BrowseTeachers() {
                 signAndSubmitTransaction,
             });
             alert("Request sent successfully!");
-        }
-        catch(e) {
+        } catch (e) {
+            console.error(e);
             alert("Failed to send request: " + (e?.message || "Unknown error"));
         }
         setRequesting(null);
     }
 
-    return(
+    return (
         <div className="card p-4">
             <h2 className="text-xl font-bold mb-4">Browse Teachers</h2>
             {loading ? (
@@ -55,8 +61,19 @@ export default function BrowseTeachers() {
                                     <span key={i} className="chip">{skill}</span>
                                 ))}
                             </div>
+                            {teacher.skills.length > 1 && (
+                                <select
+                                    className="mt-2 rounded border px-2 py-1"
+                                    value={selectedSkills[teacher.address] || teacher.skills[0]}
+                                    onChange={e => handleSkillChange(teacher.address, e.target.value)}
+                                >
+                                    {teacher.skills.map((skill, i) => (
+                                        <option key={i} value={skill}>{skill}</option>
+                                    ))}
+                                </select>
+                            )}
                             <button
-                                className="btn mt-2"
+                                className="btn mt-2 ml-2"
                                 disabled={requesting === teacher.address}
                                 onClick={() => handlerequest(teacher)}
                             >

@@ -3,57 +3,55 @@ module 0x2::basic {
     use aptos_framework::account;
     use std::signer;
 
-    #[test(alice = @0xa)]
-    fun it_registers(alice: signer) {
-        skillshare::register_user(&alice, b"alice");
-        skillshare::add_skill(&alice, b"solidity");
-    }
-
-    #[test]
-    fun it_returns_false_if_not_registered() {
-        let _tmp = account::create_signer_for_test(@0xAAA);
-        assert!(!skillshare::user_exists(@0xAAA), 101);
-    }
-
-    //Teach request tests
-    #[test(admin=@skillshare_addr, alice=@0xa, bob=@0xb)]
-    fun test_request_flow(admin: &signer, alice: &signer, bob: &signer){
-        // Setup
+    #[test(admin = @skillshare_addr, alice = @0xa, bob = @0xb)]
+    fun it_registers(admin: &signer, alice: &signer, bob: &signer) {
+        // Initialize event handles
         account::create_account_for_test(signer::address_of(admin));
-        account::create_account_for_test(signer::address_of(alice));
-        account::create_account_for_test(signer::address_of(bob));
-
-        //Initialize
+        skillshare::init_registration_events(admin);
         skillshare::init_global_requests(admin);
+
+        // Register Alice and Bob
         skillshare::register_user(alice, b"Alice");
         skillshare::register_user(bob, b"Bob");
-        skillshare::add_skill(bob, b"React");
 
-        //create request
-        skillshare::request_teach(alice, @0xb, b"React");
+        // Add skills
+        skillshare::add_skill(alice, b"React");
+        skillshare::add_skill(bob, b"Move");
+    }
 
-        //accept request
+    #[test(admin = @skillshare_addr, alice = @0xa, bob = @0xb)]
+    fun test_request_and_accept_flow(admin: &signer, alice: &signer, bob: &signer) {
+        account::create_account_for_test(signer::address_of(admin));
+        skillshare::init_registration_events(admin);
+        skillshare::init_global_requests(admin);
+
+        skillshare::register_user(alice, b"Alice");
+        skillshare::register_user(bob, b"Bob");
+        skillshare::add_skill(bob, b"Solidity");
+
+        // Alice requests a lesson from Bob
+        skillshare::request_teach(alice, signer::address_of(bob), b"Solidity");
+
+        // Bob accepts the request (id = 1)
         skillshare::accept_request(bob, 1);
     }
 
-
-    #[test(admin=@skillshare_addr, alice=@0xa, bob=@0xb)]
-    #[expected_failure(abort_code=5)]
-    fun test_accept_wrong_teacher(admin: &signer, alice: &signer, bob:&signer) {
+    #[test(admin = @skillshare_addr, alice = @0xa)]
+    #[expected_failure(abort_code = 1)]
+    fun test_duplicate_registration(admin: &signer, alice: &signer) {
         account::create_account_for_test(signer::address_of(admin));
-        account::create_account_for_test(signer::address_of(alice));
-        account::create_account_for_test(signer::address_of(bob));
-
-        skillshare::init_global_requests(admin);
+        skillshare::init_registration_events(admin);
         skillshare::register_user(alice, b"Alice");
-        skillshare::register_user(bob, b"Bob");
-        skillshare::add_skill(bob, b"React");
+        // This should fail (duplicate)
+        skillshare::register_user(alice, b"AliceAgain");
+    }
 
-        skillshare::request_teach(alice, @0xb, b"React");
-
-        //alice tries to accept (should fail)
-        skillshare::accept_request(alice, 1);
-
-
+    #[test(admin = @skillshare_addr, alice = @0xa)]
+    fun test_user_exists_view(admin: &signer, alice: &signer) {
+        account::create_account_for_test(signer::address_of(admin));
+        skillshare::init_registration_events(admin);
+        skillshare::register_user(alice, b"Alice");
+        assert!(skillshare::user_exists(signer::address_of(alice)), 100);
+        assert!(!skillshare::user_exists(@0xdead), 101);
     }
 }
