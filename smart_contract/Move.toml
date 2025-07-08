@@ -4,7 +4,7 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-skillshare_addr = "0xb9cd78cd6be042114d1e457538264b44491181579fb00bc8486de6267a0e42d3"
+skillshare_addr = "0x5aed43acd381e4b1c109cd5a4f896e394362999ab95e12e4ed3beb460c807f97"
 
 [dev-addresses]
 
