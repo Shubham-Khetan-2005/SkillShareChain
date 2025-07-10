@@ -112,41 +112,75 @@ export async function fetchAllTeachers() {
 
 
 export async function fetchTeacherRequests(teacherAddr) {
-  const globalRes = await client.getAccountResource(
-    MODULE_ADDR,
-    `${MODULE_ADDR}::skillshare::GlobalRequests`
-  );
-  const requestEventHandle = globalRes.data.request_events;
-  const events = await client.getEventsByEventHandle(requestEventHandle);
+  console.log("Fetching requests for teacher:", teacherAddr);
+  
+  try {
+    // Use simple event handle method only
+    const events = await client.getEventsByEventHandle(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::GlobalRequests`,
+      "request_events"
+    );
+    
+    console.log("All request events:", events);
+    
+    const filteredRequests = events
+      .filter(e => e.data.teacher.toLowerCase() === teacherAddr.toLowerCase())
+      .map(e => ({
+        id: e.data.id,
+        learner: e.data.learner,
+        skill: decode(e.data.skill),
+        accepted: false,
+      }));
 
-  return events
-    .filter(e => e.data.teacher.toLowerCase() === teacherAddr.toLowerCase())
-    .map(e => ({
-      id: e.data.id,
-      learner: e.data.learner,
-      skill: decode(e.data.skill),
-      accepted: false, // You can enhance this by cross-checking with TeachAcceptedEvent
-    }));
+    console.log("Filtered teacher requests:", filteredRequests);
+    return filteredRequests;
+    
+  } catch (error) {
+    console.error("Error fetching teacher requests:", error);
+    return [];
+  }
 }
 
 
 export async function fetchLearnerRequests(learnerAddr) {
-  const globalRes = await client.getAccountResource(
-    MODULE_ADDR,
-    `${MODULE_ADDR}::skillshare::GlobalRequests`
-  );
-  const requestEventHandle = globalRes.data.request_events;
-  const events = await client.getEventsByEventHandle(requestEventHandle);
+  console.log("Fetching learner requests for:", learnerAddr);
+  
+  try {
+    const globalRes = await client.getAccountResource(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::GlobalRequests`
+    );
+    
+    console.log("GlobalRequests found for learner");
+    
+    // ✅ CORRECT - Use three parameters: address, struct, field
+    const events = await client.getEventsByEventHandle(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::GlobalRequests`,
+      "request_events"
+    );
+    
+    console.log("All request events:", events);
+    
+    const filteredRequests = events
+      .filter(e => e.data.learner.toLowerCase() === learnerAddr.toLowerCase())
+      .map(e => ({
+        id: e.data.id,
+        teacher: e.data.teacher,
+        skill: decode(e.data.skill),
+        accepted: false, // You can enhance this later with accept events
+      }));
 
-  return events
-    .filter(e => e.data.learner.toLowerCase() === learnerAddr.toLowerCase())
-    .map(e => ({
-      id: e.data.id,
-      teacher: e.data.teacher,
-      skill: decode(e.data.skill),
-      accepted: false,
-    }));
+    console.log("Filtered learner requests:", filteredRequests);
+    return filteredRequests;
+    
+  } catch (error) {
+    console.error("Error fetching learner requests:", error);
+    return [];
+  }
 }
+
 
 export async function fetchAllRegisteredAddresses() {
   try {
@@ -167,4 +201,20 @@ export async function fetchAllRegisteredAddresses() {
   }
 }
 
+// Add this temporary function to debug
+export async function debugGlobalRequests() {
+  try {
+    const globalRes = await client.getAccountResource(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::GlobalRequests`
+    );
+    console.log("GlobalRequests resource:", globalRes);
+    console.log("request_events structure:", globalRes.data.request_events);
+    return globalRes;
+  } catch (error) {
+    console.error("Error fetching GlobalRequests:", error);
+    return null;
+  }
+}
 
+window.debugGlobalRequests = debugGlobalRequests;

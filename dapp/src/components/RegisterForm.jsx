@@ -30,42 +30,6 @@ export default function RegisterForm({ onRegistrationSuccess }) {
       return;
     }
 
-  //   console.log("Checking profile for address:", address);
-    
-  //   // Check if profile exists
-  //   try {
-  //     const resource = await client.getAccountResource(address, USER_STRUCT);
-  //     console.log("Profile already exists:", resource);
-  //     alert("Profile already exists on this wallet.");
-  //     return;
-  //   } catch (e) {
-  //     console.log("Profile check result:", e.status, e.message);
-  //     // If 404, user doesn't exist - proceed with registration
-  //     if (e.status !== 404) {
-  //       alert("Error checking profile: " + e.message);
-  //       return;
-  //     }
-  //   }
-
-  //   // Submit registration transaction
-  //   try {
-  //     console.log("Submitting registration for:", address);
-  //     const result = await signAndSubmitTransaction(
-  //       buildPayload(REGISTER_FN, [encode(nick.trim())])
-  //     );
-  //     console.log("Registration result:", result);
-  //     setNick("");
-  //     alert("Registration successful!");
-      
-  //     if (onRegistrationSuccess) {
-  //       onRegistrationSuccess();
-  //     }
-  //   } catch (e) {
-  //     console.error("Registration error:", e);
-  //     alert("Registration failed: " + (e?.message || "Unknown error"));
-  //   }
-  // }
-
   setBusy(true);
     try {
       /* 1 ─ duplicate-profile guard (cheap view call) */

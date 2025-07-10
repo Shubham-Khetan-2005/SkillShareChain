@@ -7,22 +7,45 @@ import {
 } from "../lib/aptos";
 
 export default function TeacherDashboard() {
+    console.log("TeacherDashboard component rendering");
+
     const { account, signAndSubmitTransaction } = useWallet();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [accepting, setAccepting] = useState(null);
 
     useEffect(() => {
-        async function loadRequests() {
-            if(!account) return setRequests([]);
-            setLoading(true);
-            const addr = getAccountAddress(account);
-            const reqs = await fetchTeacherRequests(addr);
-            setRequests(reqs);
-            setLoading(false);
+    async function loadRequests() {
+        console.log("loadRequests function called");
+        
+        if(!account) {
+            console.log("No account found, returning early");
+            return setRequests([]);
         }
-        loadRequests();
-    }, [account]);
+        
+        console.log("Account found, proceeding...");
+        setLoading(true);
+        
+        const addr = getAccountAddress(account);
+        console.log("Teacher address:", addr);
+        console.log("Address is valid:", !!addr);
+        
+        if (!addr) {
+            console.log("Address is null/undefined, cannot fetch requests");
+            setLoading(false);
+            return;
+        }
+        
+        console.log("Calling fetchTeacherRequests...");
+        const reqs = await fetchTeacherRequests(addr);
+        console.log("Fetched requests:", reqs);
+        setRequests(reqs);
+        setLoading(false);
+    }
+    
+    loadRequests();
+}, [account]);
+
 
     async function handleAccept(reqId){
         setAccepting(reqId);
@@ -76,3 +99,4 @@ export default function TeacherDashboard() {
         </div>
     );
 }
+
