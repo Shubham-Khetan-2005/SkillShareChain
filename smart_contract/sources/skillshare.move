@@ -12,7 +12,7 @@ module skillshare_addr::skillshare {
         skills: vector<vector<u8>>,
     }
 
-    // A request from a learner to a teacher for a lesson
+    /// A request from a learner to a teacher for a lesson
     struct TeachRequest has store {
         id: u64,
         learner: address,
@@ -21,15 +21,17 @@ module skillshare_addr::skillshare {
         accepted: bool,
     }
 
-    // Global storage for all teach requests and events
+    /// Global storage for all teach requests and events
     struct GlobalRequests has key {
         next_id: u64,
         requests: Table<u64, TeachRequest>,
         request_events: event::EventHandle<TeachRequestedEvent>,
         accept_events: event::EventHandle<TeachAcceptedEvent>,
+        request_events: event::EventHandle<TeachRequestedEvent>,
+        accept_events: event::EventHandle<TeachAcceptedEvent>,
     }
 
-    // Event emitted when a teach request is created
+    /// Event emitted when a teach request is created
     struct TeachRequestedEvent has drop, store {
         id: u64,
         learner: address,
@@ -38,6 +40,7 @@ module skillshare_addr::skillshare {
     }
 
     // Event emitted when a teach request is accepted
+    /// Event emitted when a teach request is accepted
     struct TeachAcceptedEvent has drop, store {
         id: u64,
     }
@@ -57,7 +60,7 @@ module skillshare_addr::skillshare {
     // error code 1: user already exists
     public entry fun register_user(acct: &signer, name: vector<u8>) acquires RegistrationEvents {
         assert!(!exists<User>(signer::address_of(acct)), 1);
-        move_to(acct, User { name: copy name, skills: vector::empty<vector<u8>>() });
+        move_to(acct, User { name: copy name: copy name, skills: vector::empty<vector<u8>>() });
 
         let events = borrow_global_mut<RegistrationEvents>(@skillshare_addr);
         event::emit_event<UserRegisteredEvent>(&mut events.handle, UserRegisteredEvent {
@@ -66,7 +69,7 @@ module skillshare_addr::skillshare {
         });
     }
 
-    // Boolean view used by the front-end duplicate guard
+    /// Boolean view used by the front-end duplicate guard
     #[view]
     public fun user_exists(addr: address): bool {
         exists<User>(addr)
@@ -74,6 +77,8 @@ module skillshare_addr::skillshare {
 
     // Add a skill to the caller's profile
     // error code 2: user not found
+    /// Add a skill to the caller's profile
+    /// error code 2: user not found
     public entry fun add_skill(acct: &signer, skill: vector<u8>) acquires User {
         assert!(exists<User>(signer::address_of(acct)), 2);
         let user_ref = borrow_global_mut<User>(signer::address_of(acct));
@@ -81,6 +86,7 @@ module skillshare_addr::skillshare {
     }
 
     // Initialize global storage for teach requests and events (call once by admin)
+    /// Initialize global storage for teach requests and events (call once by admin)
     public entry fun init_global_requests(admin: &signer) {
         let addr = signer::address_of(admin);
         if (!exists<GlobalRequests>(addr)) {
@@ -124,13 +130,13 @@ module skillshare_addr::skillshare {
             learner: learner_addr,
             teacher,
             skill: copy skill,
-            accepted: false,
+            accepted: false,,
         };
         table::add(&mut global.requests, id, request);
         global.next_id = id + 1;
 
-        // Emit event
-        event::emit_event<TeachRequestedEvent>(&mut global.request_events, TeachRequestedEvent {
+        //  Emit event
+        event::emit_event<TeachRequestedEvent><TeachRequestedEvent>(&mut global.request_events, TeachRequestedEvent {
             id,
             learner: learner_addr,
             teacher,
@@ -138,14 +144,13 @@ module skillshare_addr::skillshare {
         });
     }
 
-    // Teacher accepts a teach request by ID
-    // error code 4: request not found
-    // error code 5: not your request
+    /// Teacher accepts a teach request by ID
+    /// error code 4: request not found
+    /// error code 5: not your request
     public entry fun accept_request(
         teacher: &signer,
         id: u64
     ) acquires GlobalRequests {
-        let teacher_addr = signer::address_of(teacher);
         let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
 
         // Validate request exists
