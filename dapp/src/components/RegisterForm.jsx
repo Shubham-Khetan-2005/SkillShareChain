@@ -13,11 +13,13 @@ export default function RegisterForm({ onRegistrationSuccess }) {
   const [nick, setNick] = useState("");
   const [busy, setBusy]   = useState(false);
 
+  
   async function register() {
     if (!account) {
       alert("Connect wallet first");
       return;
     }
+
     
     const address = getAccountAddress(account);
     if (!address) {

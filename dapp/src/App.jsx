@@ -6,6 +6,7 @@ import AddSkillForm from "./components/AddSkillForm";
 import Profile from "./components/Profile";
 import BrowseTeachers from "./components/BrowseTeachers";
 import TeacherDashboard from "./components/TeacherDashboard";
+import LearnerDashboard from "./components/LearnerDashboard"; 
 
 export default function App() {
   const [refresh, setRefresh] = useState(0);
@@ -46,6 +47,12 @@ export default function App() {
             >
               Teacher DashBoard
             </button>
+            <button
+              className={`btn-outline ${page === "dashboard" ? "bg-blue-100" : ""}`}
+              onClick={() => setPage("yourdashboard")}
+            >
+              Learner DashBoard
+            </button>
           </nav>
 
           {/* Page Content */}
@@ -66,7 +73,8 @@ export default function App() {
           )}
 
           {page === "browse" && <BrowseTeachers/>}
-          {page === "dashbooard" && <TeacherDashboard/>}
+          {page === "dashboard" && <TeacherDashboard/>}
+          {page === "yourdashboard" && <LearnerDashboard/>}
           
         </div>
       </main>
