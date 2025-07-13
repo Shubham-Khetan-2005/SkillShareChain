@@ -12,24 +12,26 @@ module skillshare_addr::skillshare {
         skills: vector<vector<u8>>,
     }
 
-    // A request from a learner to a teacher for a lesson
+    /// A request from a learner to a teacher for a lesson
     struct TeachRequest has store {
         id: u64,
         learner: address,
         teacher: address,
         skill: vector<u8>,
         accepted: bool,
+        rejected: bool,
     }
 
-    // Global storage for all teach requests and events
+    /// Global storage for all teach requests and events
     struct GlobalRequests has key {
         next_id: u64,
         requests: Table<u64, TeachRequest>,
         request_events: event::EventHandle<TeachRequestedEvent>,
         accept_events: event::EventHandle<TeachAcceptedEvent>,
+        rejected_events: event::EventHandle<TeachRejectedEvent>,
     }
 
-    // Event emitted when a teach request is created
+    /// Event emitted when a teach request is created
     struct TeachRequestedEvent has drop, store {
         id: u64,
         learner: address,
@@ -37,8 +39,12 @@ module skillshare_addr::skillshare {
         skill: vector<u8>,
     }
 
-    // Event emitted when a teach request is accepted
+    /// Event emitted when a teach request is accepted
     struct TeachAcceptedEvent has drop, store {
+        id: u64,
+    }
+
+    struct TeachRejectedEvent has drop, store {
         id: u64,
     }
 
@@ -66,7 +72,7 @@ module skillshare_addr::skillshare {
         });
     }
 
-    // Boolean view used by the front-end duplicate guard
+    /// Boolean view used by the front-end duplicate guard
     #[view]
     public fun user_exists(addr: address): bool {
         exists<User>(addr)
@@ -80,7 +86,7 @@ module skillshare_addr::skillshare {
         vector::push_back(&mut user_ref.skills, skill);
     }
 
-    // Initialize global storage for teach requests and events (call once by admin)
+    /// Initialize global storage for teach requests and events (call once by admin)
     public entry fun init_global_requests(admin: &signer) {
         let addr = signer::address_of(admin);
         if (!exists<GlobalRequests>(addr)) {
@@ -89,6 +95,7 @@ module skillshare_addr::skillshare {
                 requests: table::new(),
                 request_events: account::new_event_handle<TeachRequestedEvent>(admin),
                 accept_events: account::new_event_handle<TeachAcceptedEvent>(admin),
+                rejected_events: account::new_event_handle<TeachRejectedEvent>(admin),
             });
         }
     }
@@ -125,11 +132,12 @@ module skillshare_addr::skillshare {
             teacher,
             skill: copy skill,
             accepted: false,
+            rejected: false,
         };
         table::add(&mut global.requests, id, request);
         global.next_id = id + 1;
 
-        // Emit event
+        //  Emit event
         event::emit_event<TeachRequestedEvent>(&mut global.request_events, TeachRequestedEvent {
             id,
             learner: learner_addr,
@@ -138,14 +146,15 @@ module skillshare_addr::skillshare {
         });
     }
 
-    // Teacher accepts a teach request by ID
-    // error code 4: request not found
-    // error code 5: not your request
+    /// Teacher accepts a teach request by ID
+    /// error code 4: request not found
+    /// error code 5: not your request
     public entry fun accept_request(
         teacher: &signer,
         id: u64
     ) acquires GlobalRequests {
         let teacher_addr = signer::address_of(teacher);
+
         let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
 
         // Validate request exists
@@ -163,4 +172,33 @@ module skillshare_addr::skillshare {
             id,
         });
     }
+
+    /// Teacher rejects a teach request by ID
+    /// error code 4: request not found
+    /// error code 5: not your request
+    /// error code 6: already accepted or rejected
+    public entry fun reject_request(
+        teacher: &signer,
+        id: u64
+    ) acquires GlobalRequests {
+        let teacher_addr = signer::address_of(teacher);
+        let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
+
+        // Validate request exists
+        assert!(table::contains(&global.requests, id), 4);
+        let request = table::borrow_mut(&mut global.requests, id);
+
+        // Validate teacher is correct
+        assert!(request.teacher == teacher_addr, 5);
+
+        // Only pending requests can be rejected
+        assert!(!request.accepted && !request.rejected, 6);
+
+        request.rejected = true;
+
+        event::emit_event<TeachRejectedEvent>(&mut global.rejected_events, TeachRejectedEvent {
+            id,
+        });
+    }
+
 }

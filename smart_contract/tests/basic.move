@@ -3,18 +3,30 @@ module 0x2::basic {
     use aptos_framework::account;
     use std::signer;
 
+    #[test(alice = @0xa, admin = @skillshare_addr)]
+    fun it_registers(admin: &signer, alice: signer) {
+        account::create_account_for_test(signer::address_of(admin));
+        skillshare::init_registration_events(admin);
+        skillshare::register_user(&alice, b"alice");
+        skillshare::add_skill(&alice, b"solidity");
+    }
+    
+
+
+    #[test]
+    fun it_returns_false_if_not_registered() {
+        let _tmp = account::create_signer_for_test(@0xAAA);
+        assert!(!skillshare::user_exists(@0xAAA), 101);
+    }
+
     #[test(admin = @skillshare_addr, alice = @0xa, bob = @0xb)]
-    fun it_registers(admin: &signer, alice: &signer, bob: &signer) {
-        // Initialize event handles
+    fun test_request_flow(admin: &signer, alice: &signer, bob: &signer) {
         account::create_account_for_test(signer::address_of(admin));
         skillshare::init_registration_events(admin);
         skillshare::init_global_requests(admin);
 
-        // Register Alice and Bob
         skillshare::register_user(alice, b"Alice");
         skillshare::register_user(bob, b"Bob");
-
-        // Add skills
         skillshare::add_skill(alice, b"React");
         skillshare::add_skill(bob, b"Move");
     }
@@ -29,10 +41,7 @@ module 0x2::basic {
         skillshare::register_user(bob, b"Bob");
         skillshare::add_skill(bob, b"Solidity");
 
-        // Alice requests a lesson from Bob
         skillshare::request_teach(alice, signer::address_of(bob), b"Solidity");
-
-        // Bob accepts the request (id = 1)
         skillshare::accept_request(bob, 1);
     }
 
@@ -42,8 +51,7 @@ module 0x2::basic {
         account::create_account_for_test(signer::address_of(admin));
         skillshare::init_registration_events(admin);
         skillshare::register_user(alice, b"Alice");
-        // This should fail (duplicate)
-        skillshare::register_user(alice, b"AliceAgain");
+        skillshare::register_user(alice, b"Alice"); // Should abort
     }
 
     #[test(admin = @skillshare_addr, alice = @0xa)]
@@ -53,5 +61,17 @@ module 0x2::basic {
         skillshare::register_user(alice, b"Alice");
         assert!(skillshare::user_exists(signer::address_of(alice)), 100);
         assert!(!skillshare::user_exists(@0xdead), 101);
+    }
+
+    #[test(admin = @skillshare_addr, alice = @0xa, bob = @0xb)]
+    fun test_reject_flow(admin: &signer, alice: &signer, bob: &signer) {
+        account::create_account_for_test(signer::address_of(admin));
+        skillshare::init_registration_events(admin);
+        skillshare::init_global_requests(admin);
+        skillshare::register_user(alice, b"Alice");
+        skillshare::register_user(bob, b"Bob");
+        skillshare::add_skill(bob, b"Move");
+        skillshare::request_teach(alice, signer::address_of(bob), b"Move");
+        skillshare::reject_request(bob, 1); // now rejected!
     }
 }
