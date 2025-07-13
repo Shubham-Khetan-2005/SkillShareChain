@@ -112,9 +112,124 @@ export async function fetchAllTeachers() {
 
 
 export async function fetchTeacherRequests(teacherAddr) {
-  // TODO: Implement: fetch events or table data from chain
-  // For now, return an empty array or mock data
-  return [];
+  const globalRes = await client.getAccountResource(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`
+  );
+  // Fetch all request events
+  const requestEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "request_events"
+  );
+  // Fetch all accept events
+  const acceptEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "accept_events"
+  );
+  // Fetch all reject events
+  const rejectEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "rejected_events"
+  );
+  const acceptedIds = new Set(acceptEvents.map(e => e.data.id));
+  const rejectedIds = new Set(rejectEvents.map(e => e.data.id));
+
+  // Only show pending or accepted
+  return requestEvents
+    .filter(e => e.data.teacher.toLowerCase() === teacherAddr.toLowerCase())
+    .map(e => ({
+      id: e.data.id,
+      learner: e.data.learner,
+      skill: decode(e.data.skill),
+      accepted: acceptedIds.has(e.data.id),
+      rejected: rejectedIds.has(e.data.id)
+    }));
 }
 
 
+export async function fetchLearnerRequests(learnerAddr) {
+  const globalRes = await client.getAccountResource(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`
+  );
+  // Fetch events
+  const requestEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "request_events"
+  );
+  const acceptEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "accept_events"
+  );
+  const rejectEvents = await client.getEventsByEventHandle(
+    MODULE_ADDR,
+    `${MODULE_ADDR}::skillshare::GlobalRequests`,
+    "rejected_events"
+  );
+  const acceptedIds = new Set(acceptEvents.map(e => e.data.id));
+  const rejectedIds = new Set(rejectEvents.map(e => e.data.id));
+
+  return requestEvents
+    .filter(e => e.data.learner.toLowerCase() === learnerAddr.toLowerCase())
+    .map(e => ({
+      id: e.data.id,
+      teacher: e.data.teacher,
+      skill: decode(e.data.skill),
+      accepted: acceptedIds.has(e.data.id),
+      rejected: rejectedIds.has(e.data.id)
+    }));
+}
+
+
+export async function fetchAllRegisteredAddresses() {
+  try {
+    // Direct event handle approach
+    const events = await client.getEventsByEventHandle(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::RegistrationEvents`,
+      "handle"
+    );
+    
+    return events.map(e => ({
+      address: e.data.addr,
+      name: decode(e.data.name),
+    }));
+  } catch (error) {
+    console.error("Error fetching registered addresses:", error);
+    return [];
+  }
+}
+
+// Add this temporary function to debug
+export async function debugGlobalRequests() {
+  try {
+    const globalRes = await client.getAccountResource(
+      MODULE_ADDR,
+      `${MODULE_ADDR}::skillshare::GlobalRequests`
+    );
+    console.log("GlobalRequests resource:", globalRes);
+    console.log("request_events structure:", globalRes.data.request_events);
+    return globalRes;
+  } catch (error) {
+    console.error("Error fetching GlobalRequests:", error);
+    return null;
+  }
+}
+
+// Add this function for on-chain rejection
+export async function rejectTeachRequest({ requestId, signAndSubmitTransaction }) {
+  const payload = buildPayload(
+    `${MODULE_ADDR}::skillshare::reject_request`,
+    [requestId]
+  );
+  return await signAndSubmitTransaction(payload);
+}
+
+
+
+window.debugGlobalRequests = debugGlobalRequests;

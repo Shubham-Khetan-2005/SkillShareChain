@@ -6,7 +6,6 @@ import AddSkillForm from "./components/AddSkillForm";
 import Profile from "./components/Profile";
 import BrowseTeachers from "./components/BrowseTeachers";
 import TeacherDashboard from "./components/TeacherDashboard";
-import LearnerDashboard from "./components/LearnerDashboard"; 
 import LearnerDashboard from "./components/LearnerDashboard";
 
 export default function App() {
