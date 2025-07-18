@@ -164,6 +164,12 @@ module skillshare_addr::skillshare {
         });
     }
 
+    /// Register user for AptosCoin (wrapper entry function)
+    public entry fun register_for_aptos_coin(user: &signer) {
+        // Call the framework's public function from within our entry function
+        coin::register<AptosCoin>(user);
+    }
+
     // Original registration (backward compatibility)
     // error code 1: user already exists
     // public entry fun register_user(acct: &signer, name: vector<u8>) acquires RegistrationEvents {
@@ -425,6 +431,12 @@ module skillshare_addr::skillshare {
             teacher_user.contact_info
         }
     }
+
+    /// Initialize contract for holding AptosCoin
+    public entry fun init_contract_coin_store(account: &signer) {
+        coin::register<AptosCoin>(account);
+    }
+
 
     // Boolean view used by the front-end duplicate guard
     #[view]

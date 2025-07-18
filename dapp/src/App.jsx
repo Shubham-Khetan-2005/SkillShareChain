@@ -7,6 +7,8 @@ import Profile from "./components/Profile";
 import BrowseTeachers from "./components/BrowseTeachers";
 import TeacherDashboard from "./components/TeacherDashboard";
 import LearnerDashboard from "./components/LearnerDashboard";
+import { Toaster } from 'react-hot-toast';
+import LessonTab from './components/LessonTab';
 
 export default function App() {
   const [refresh, setRefresh] = useState(0);
@@ -53,6 +55,12 @@ export default function App() {
             >
               Learner DashBoard
             </button>
+            <button
+              className={`btn-outline ${page === "lesson" ? "bg-blue-100" : ""}`}
+              onClick={() => setPage("lesson")}
+            >
+              Lesson
+            </button>
           </nav>
 
           {/* Page Content */}
@@ -75,7 +83,27 @@ export default function App() {
           {page === "browse" && <BrowseTeachers/>}
           {page === "dashboard" && <TeacherDashboard/>}
           {page === "yourdashboard" && <LearnerDashboard/>}
+          {page === "lesson" && <LessonTab/>}
           
+          <Toaster 
+          position="top-center"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              theme: {
+                primary: '#4aed88',
+              },
+            },
+          }}
+        />
+
         </div>
       </main>
     </WalletProvider>
