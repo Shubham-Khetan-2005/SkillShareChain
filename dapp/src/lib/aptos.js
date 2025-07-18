@@ -5,7 +5,7 @@ export const client = new AptosClient(
 );
 
 export const MODULE_ADDR  = import.meta.env.VITE_MODULE_ADDR;
-export const REGISTER_FN  = `${MODULE_ADDR}::skillshare::register_user`;
+export const REGISTER_FN  = `${MODULE_ADDR}::skillshare::register_user_with_contact`;
 export const ADD_SKILL_FN = `${MODULE_ADDR}::skillshare::add_skill`;
 export const USER_STRUCT  = `${MODULE_ADDR}::skillshare::User`;
 export const REQUEST_FN = `${MODULE_ADDR}::skillshare::request_teach`;
@@ -73,6 +73,7 @@ export const fetchProfile = async (addr) => {
   return {
     name:   decode(resource.data.name),
     skills: resource.data.skills.map(decode),
+    contact_info: decode(resource.data.contact_info),
   };
 };
 
@@ -229,6 +230,15 @@ export async function rejectTeachRequest({ requestId, signAndSubmitTransaction }
   );
   return await signAndSubmitTransaction(payload);
 }
+
+// Add this new helper function
+export const registerUserWithContact = async ({ name, contactInfo, signAndSubmitTransaction }) => {
+  const payload = buildPayload(REGISTER_FN, [
+    encode(name),
+    encode(contactInfo)
+  ]);
+  return await signAndSubmitTransaction(payload);
+};
 
 
 

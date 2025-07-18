@@ -231,6 +231,10 @@ module skillshare_addr::skillshare {
         // Validate teacher exists
         assert!(user_exists(teacher), 3);
 
+        // ✅ Validate learner is registered
+        assert!(user_exists(learner_addr), 2); // Error code 2: user not registered
+    
+
         // Get global storage
         let global = borrow_global_mut<GlobalRequests>(@skillshare_addr);
         let id = global.next_id;
